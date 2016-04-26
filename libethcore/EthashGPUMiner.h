@@ -52,7 +52,8 @@ public:
 		unsigned _deviceId,
 		bool _allowCPU,
 		unsigned _extraGPUMemory,
-		uint64_t _currentBlock
+		uint64_t _currentBlock,
+        bool _kernelProfiling
 	);
 	static void setNumInstances(unsigned _instances) { s_numInstances = std::min<unsigned>(_instances, getNumDevices()); }
 	static void setDevices(unsigned * _devices, unsigned _selectedDeviceCount)

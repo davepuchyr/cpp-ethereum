@@ -48,7 +48,8 @@ public:
 		unsigned _globalWorkSize,
 		bool _allowCPU,
 		unsigned _extraGPUMemory,
-		uint64_t _currentBlock
+		uint64_t _currentBlock,
+		bool _kernelProfiling
 	);
 
 	bool init(
@@ -91,4 +92,6 @@ private:
 	/// GPU memory required for other things, like window rendering e.t.c.
 	/// User can set it via the --cl-extragpu-mem argument.
 	static unsigned s_extraRequiredGPUMem;
+    /// Print execution time of kernels.
+    static bool s_kernelProfiling;
 };

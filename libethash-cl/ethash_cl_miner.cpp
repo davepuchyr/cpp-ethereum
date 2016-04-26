@@ -189,13 +189,15 @@ bool ethash_cl_miner::configureGPU(
 	unsigned _globalWorkSize,
 	bool _allowCPU,
 	unsigned _extraGPUMemory,
-	uint64_t _currentBlock
+	uint64_t _currentBlock,
+	bool _kernelProfiling
 )
 {
 	s_workgroupSize = _localWorkSize;
 	s_initialGlobalWorkSize = _globalWorkSize;
 	s_allowCPU = _allowCPU;
 	s_extraRequiredGPUMem = _extraGPUMemory;
+	s_kernelProfiling = _kernelProfiling;
 	// by default let's only consider the DAG of the first epoch
 	uint64_t dagSize = ethash_get_datasize(_currentBlock);
 	uint64_t requiredSize =  dagSize + _extraGPUMemory;
@@ -223,6 +225,7 @@ bool ethash_cl_miner::configureGPU(
 }
 
 bool ethash_cl_miner::s_allowCPU = false;
+bool ethash_cl_miner::s_kernelProfiling = false;
 unsigned ethash_cl_miner::s_extraRequiredGPUMem;
 unsigned ethash_cl_miner::s_workgroupSize = ethash_cl_miner::c_defaultLocalWorkSize;
 unsigned ethash_cl_miner::s_initialGlobalWorkSize = ethash_cl_miner::c_defaultGlobalWorkSizeMultiplier * ethash_cl_miner::c_defaultLocalWorkSize;
@@ -315,6 +318,29 @@ void ethash_cl_miner::finish()
 		m_queue.finish();
 }
 
+void printStats(cl_event event, int , void* data) {
+    uint64_t* hashes = (uint64_t*)data;
+
+    cl_int err;
+    cl_ulong queue_time_ns;
+    cl_ulong end_time_ns;
+    cl_ulong start_time_ns;
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_QUEUED, sizeof(cl_ulong), &queue_time_ns, NULL);
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_START, sizeof(cl_ulong), &start_time_ns, NULL);
+    clGetEventProfilingInfo(event, CL_PROFILING_COMMAND_END, sizeof(cl_ulong), &end_time_ns, NULL);
+
+    cl_ulong queued = (start_time_ns - queue_time_ns);
+    cl_ulong elapsed = (end_time_ns - start_time_ns);
+    double seconds = elapsed / 1.0e9;
+
+    std::stringstream message;
+    message << "Kernel execution time: " << elapsed << "ns" << " = " << seconds << "s"
+            << " = " << *hashes / seconds << " hashes/s" << ", queued for " << queued / 1.0e9 << "s";
+    ETHCL_LOG(message.str());
+
+    delete hashes;
+}
+
 bool ethash_cl_miner::init(
 	uint8_t const* _dag,
 	uint64_t _dagSize,
@@ -383,7 +409,7 @@ bool ethash_cl_miner::init(
 		}
 		// create context
 		m_context = cl::Context(vector<cl::Device>(&device, &device + 1));
-		m_queue = cl::CommandQueue(m_context, device);
+		m_queue = cl::CommandQueue(m_context, device, s_kernelProfiling ? CL_QUEUE_PROFILING_ENABLE: 0);
 
 		// make sure that global work size is evenly divisible by the local workgroup size
 		m_globalWorkSize = s_initialGlobalWorkSize;
@@ -501,7 +527,13 @@ void ethash_cl_miner::search(uint8_t const* header, uint64_t target, search_hook
 			m_searchKernel.setArg(3, start_nonce);
 
 			// execute it!
-			m_queue.enqueueNDRangeKernel(m_searchKernel, cl::NullRange, m_globalWorkSize, s_workgroupSize);
+			cl::Event event;
+			m_queue.enqueueNDRangeKernel(m_searchKernel, cl::NullRange, m_globalWorkSize, s_workgroupSize, nullptr, &event);
+			if (s_kernelProfiling) {
+			    uint64_t* hashes = new uint64_t;
+			    *hashes = m_globalWorkSize;
+			    event.setCallback(CL_COMPLETE, printStats, hashes);
+			}
 
 			pending.push({ start_nonce, buf });
 			buf = (buf + 1) % c_bufferCount;

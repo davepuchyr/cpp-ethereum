@@ -207,7 +207,8 @@ bool EthashGPUMiner::configureGPU(
 	unsigned _deviceId,
 	bool _allowCPU,
 	unsigned _extraGPUMemory,
-	uint64_t _currentBlock
+	uint64_t _currentBlock,
+    bool _kernelProfiling
 )
 {
 	s_platformId = _platformId;
@@ -227,7 +228,8 @@ bool EthashGPUMiner::configureGPU(
 			_globalWorkSizeMultiplier * _localWorkSize,
 			_allowCPU,
 			_extraGPUMemory,
-			_currentBlock)
+			_currentBlock,
+			_kernelProfiling)
 	)
 	{
 		cout << "No GPU device with sufficient memory was found. Can't GPU mine. Remove the -G argument" << endl;

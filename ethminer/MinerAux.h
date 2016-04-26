@@ -279,6 +279,10 @@ public:
 #if ETH_ETHASHCL || !ETH_TRUE
 		else if (arg == "--allow-opencl-cpu")
 			m_clAllowCPU = true;
+		else if (arg == "--cl-kernel-profiling") {
+		    m_kernelProfiling = true;
+		}
+
 #endif
 #if ETH_ETHASHCUDA || !ETH_TRUE
 		else if (arg == "--cuda-devices")
@@ -537,7 +541,8 @@ public:
 					m_openclDevice,
 					m_clAllowCPU,
 					m_extraGPUMemory,
-					m_currentBlock
+					m_currentBlock,
+					m_kernelProfiling
 				))
 				exit(1);
 			EthashGPUMiner::setNumInstances(m_miningThreads);
@@ -1047,6 +1052,7 @@ private:
 	unsigned m_miningThreads = UINT_MAX;
 	bool m_shouldListDevices = false;
 	bool m_clAllowCPU = false;
+	bool m_kernelProfiling = false;
 #if ETH_ETHASHCL || !ETH_TRUE
 	unsigned m_openclDeviceCount = 0;
 	unsigned m_openclDevices[16];
