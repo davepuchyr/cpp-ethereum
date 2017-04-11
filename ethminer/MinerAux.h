@@ -239,6 +239,8 @@ public:
 				BOOST_THROW_EXCEPTION(BadArgument());
 			}
 		else if (arg == "--opencl-devices")
+BOOST_THROW_EXCEPTION(BadArgument()); // dmjp
+/* dmjp
 			while (m_openclDeviceCount < 16 && i + 1 < argc)
 			{
 				try
@@ -252,6 +254,7 @@ public:
 					break;
 				}
 			}
+dmjp */
 #if ETH_ETHASHCL || ETH_ETHASHCUDA || !ETH_TRUE
 		else if ((arg == "--cl-global-work" || arg == "--cuda-grid-size")  && i + 1 < argc)
 			try {
