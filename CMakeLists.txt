@@ -76,6 +76,7 @@ elseif (BUNDLE STREQUAL "cudaminer")
 	set(D_ETHASHCUDA ON)
 	set(D_JSONRPC ON)
 	set(D_ETHSTRATUM ON)
+	set(D_CMAKE_BUILD_TYPE "Release") # dmjp
 elseif (BUNDLE STREQUAL "release")      # release builds
 	set(D_GUI ON)
 	set(D_ETHASHCL ON)
